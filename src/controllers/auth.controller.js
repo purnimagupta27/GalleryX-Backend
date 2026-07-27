@@ -1,0 +1,107 @@
+import bcrypt from 'bcrypt'
+
+import ApiError from "../utils/api-error.js"
+import ApiResponse from '../utils/api-response.js'
+import { signupValidateSchema, signinValidateSchema } from '../dto/auth.dto.js'
+import db from "../index.js"
+import { usersTable } from '../models/users.model.js'
+import { eq, or } from 'drizzle-orm'
+import { generateToken, verifyToken } from '../utils/token.js'
+import { id } from 'zod/v4/locales'
+
+const userSignup = async (req, res) => {
+    const validatedData = await signupValidateSchema.safeParseAsync(req.body)
+
+    if (!validatedData.success) {
+        return res.status(400).json({
+            success: false,
+            errors: validatedData.error.issues
+        });
+    }
+
+    const { username, email, password } = validatedData.data
+
+    if (!username || !email || !password) {
+        throw ApiError.badRequest("Please fill all the details")
+    }
+
+    const [existingUser] = await db
+        .select({ username: usersTable.username, email: usersTable.email })
+        .from(usersTable)
+        .where(or(eq(usersTable.email, email), eq(usersTable.username, username)))
+
+    if (existingUser) {
+        throw ApiError.conflict("This email or username has already taken")
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    await db.insert(usersTable)
+        .values({
+            username,
+            email,
+            password: hashedPassword
+        }).returning({ id: usersTable.id })
+
+    res.json(ApiResponse.created("User registration completed"))
+}
+
+
+const userSignin = async (req, res) => {
+    const validatedData = await signinValidateSchema.safeParseAsync(req.body)
+
+    if (!validatedData.success) {
+        return res.status(400).json({
+            success: false,
+            errors: validatedData.error.issues
+        });
+    }
+
+    const { identifier, password } = validatedData.data
+    if (!identifier || !password) {
+        throw ApiError.badRequest("Please fill all the details")
+    }
+
+    const [existingUser] = await db
+        .select({ id: usersTable.id, username: usersTable.username, email: usersTable.email, password: usersTable.password })
+        .from(usersTable)
+        .where(or(eq(usersTable.username, identifier), eq(usersTable.email, identifier)))
+
+    if (!existingUser) {
+        throw ApiError.notFound("User with this email or username does not exist")
+    }
+
+    const isCorrectPassword = bcrypt.compare(existingUser.password, password)
+
+    if (!isCorrectPassword) {
+        throw ApiError.unauthorized("Incorrect password")
+    }
+
+    const token = generateToken({ id: existingUser.id })
+
+    res.json(ApiResponse.ok("User logged-in", token))
+}
+
+const getMe = async (req, res) => {
+    const [user] = await db
+        .select({
+            id: usersTable.id,
+            username: usersTable.username,
+            nickname: usersTable.nickname,
+            url: usersTable.url
+        })
+        .from(usersTable)
+        .where(eq(usersTable.id, req.user.id))
+
+    if (!user) {
+        throw ApiError.notFound("User not found")
+    }
+
+    return res.json(ApiResponse.ok("User profile fetched", user))
+}
+
+export {
+    userSignup,
+    userSignin,
+    getMe
+}
