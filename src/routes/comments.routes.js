@@ -6,7 +6,7 @@ const router = Router()
 
 router.post('/post/:postId', authenticate, controller.createComment)
 router.delete('/:commentId', authenticate, controller.deleteComment)
-router.get('/:postId', controller.getComments)
+router.get('/:postId', authenticate, controller.getComments)
 
 
 export default router

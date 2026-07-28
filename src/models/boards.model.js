@@ -8,9 +8,6 @@ export const boardsTable = pgTable("boards", {
     userId: uuid().notNull().references(() => usersTable.id, {
         onDelete: "cascade"
     }),
-    postId: uuid().notNull().references(() => postsTable.id, {
-        onDelete: "cascade"
-    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
