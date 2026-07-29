@@ -1,0 +1,1 @@
+ALTER TABLE "posts" DROP CONSTRAINT "posts_boardId_boards_id_fkey", ADD CONSTRAINT "posts_boardId_boards_id_fkey" FOREIGN KEY ("boardId") REFERENCES "boards"("id") ON DELETE SET NULL;

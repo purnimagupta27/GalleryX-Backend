@@ -1,3 +1,4 @@
+import { id } from "zod/v4/locales"
 import db from "../index.js"
 import { boardsTable } from "../models/boards.model.js"
 import { postsTable } from "../models/posts.model.js"
@@ -5,6 +6,7 @@ import ApiError from "../utils/api-error.js"
 import ApiResponse from "../utils/api-response.js"
 import { eq, and } from "drizzle-orm"
 import { validate as isUUID } from 'uuid'
+import { url } from "zod"
 
 const createBoard = async (req, res) => {
     const { name } = req.body
@@ -162,9 +164,92 @@ const removePostFromBoard = async (req, res) => {
     res.json(ApiResponse.ok("Post Removed", removedPost.id))
 }
 
+const getMyBoards = async (req, res) => {
+    const boards = await db
+        .select()
+        .from(boardsTable)
+        .where(eq(boardsTable.userId, req.user.id))
+
+    if (boards.length === 0) {
+        return res.status(200).json({
+            message: "No boards created",
+            data: boards
+        })
+    }
+
+    res.json(ApiResponse.ok("Borads fetched", boards))
+}
+
+const getPostsFromBoard = async (req, res) => {
+    const { boardId } = req.params
+
+    if (!isUUID(boardId)) {
+        throw ApiError.badRequest("Invalid id")
+    }
+
+    const [board] = await db
+        .select()
+        .from(boardsTable)
+        .where(and(
+            eq(boardsTable.id, boardId),
+            eq(boardsTable.userId, req.user.id)
+        ))
+
+    if (!board) {
+        throw ApiError.notFound("Board not found")
+    }
+
+    const posts = await db
+        .select({
+            postId: postsTable.id,
+            url: postsTable.url
+        })
+        .from(postsTable)
+        .where(eq(postsTable.boardId, boardId))
+
+    const data = {
+        boardName: board.name,
+        posts
+    }
+
+    res.json(ApiResponse.ok("Posts", data))
+}
+
+const deleteBoard = async(req, res) => {
+    const {boardId} = req.params
+
+    if (!isUUID(boardId)) {
+        throw ApiError.badRequest("Invalid id")
+    }
+
+    const [board] = await db
+        .select()
+        .from(boardsTable)
+        .where(and(
+            eq(boardsTable.id, boardId),
+            eq(boardsTable.userId, req.user.id)
+        ))
+
+    if (!board) {
+        throw ApiError.notFound("Board not found")
+    }
+
+    await db
+    .delete(boardsTable)
+    .where(and(
+            eq(boardsTable.id, boardId),
+            eq(boardsTable.userId, req.user.id)
+        )).returning()
+
+    res.json(ApiResponse.ok("Board deleted"))
+}
+
 export {
     createBoard,
     updateBoardName,
     addPostToBoard,
-    removePostFromBoard
+    removePostFromBoard,
+    getMyBoards,
+    getPostsFromBoard,
+    deleteBoard
 }
