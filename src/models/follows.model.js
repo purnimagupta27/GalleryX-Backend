@@ -1,4 +1,4 @@
-import { integer, pgTable, varchar, uuid, timestamp, check } from "drizzle-orm/pg-core";
+import { integer, pgTable, varchar, uuid, timestamp, check, unique } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 import { usersTable } from "./users.model.js";
@@ -12,6 +12,6 @@ export const followsTable = pgTable("follows", {
         onDelete: "cascade"
     }),
 }, (table) => [
-//   unique('unique_follower_per_following').on(table.followerId, table.followingId),
+  unique('unique_follower_per_following').on(table.followerId, table.followingId),
   check("prevent_self_follow", sql`${table.followerId} <> ${table.followingId}`)
 ])
