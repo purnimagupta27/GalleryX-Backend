@@ -4,7 +4,7 @@ import uploadOnCloudinary from "../utils/cloudinary.js"
 import db from "../index.js"
 import { postsTable } from '../models/posts.model.js'
 import ApiResponse from "../utils/api-response.js"
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and, desc, count } from 'drizzle-orm'
 import { usersTable } from "../models/users.model.js"
 import { validate as isUUID } from 'uuid'
 import { likesTable } from "../models/likes.model.js"
@@ -220,10 +220,15 @@ const getPostById = async (req, res) => {
         user: {
             userId: usersTable.id,
             username: usersTable.username
+        },
+
+        likes:{
+            likesCount: count(likesTable.id)
         }
     })
         .from(postsTable)
         .innerJoin(usersTable, eq(postsTable.userId, usersTable.id))
+        .leftJoin(likesTable, eq(postsTable.id, likesTable.postId))
         .where(and(
             eq(postsTable.id, id),
             eq(postsTable.isPrivate, false))

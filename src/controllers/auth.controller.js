@@ -1,5 +1,4 @@
 import bcrypt from 'bcrypt'
-
 import ApiError from "../utils/api-error.js"
 import ApiResponse from '../utils/api-response.js'
 import { signupValidateSchema, signinValidateSchema } from '../dto/auth.dto.js'
@@ -7,7 +6,7 @@ import db from "../index.js"
 import { usersTable } from '../models/users.model.js'
 import { eq, or } from 'drizzle-orm'
 import { generateToken, verifyToken } from '../utils/token.js'
-import { id } from 'zod/v4/locales'
+import { postsTable } from '../models/posts.model.js'
 
 const userSignup = async (req, res) => {
     const validatedData = await signupValidateSchema.safeParseAsync(req.body)
@@ -71,7 +70,7 @@ const userSignin = async (req, res) => {
         throw ApiError.notFound("User with this email or username does not exist")
     }
 
-    const isCorrectPassword = bcrypt.compare(existingUser.password, password)
+    const isCorrectPassword = await bcrypt.compare(password, existingUser.password)
 
     if (!isCorrectPassword) {
         throw ApiError.unauthorized("Incorrect password")
@@ -93,11 +92,19 @@ const getMe = async (req, res) => {
         .from(usersTable)
         .where(eq(usersTable.id, req.user.id))
 
-    if (!user) {
-        throw ApiError.notFound("User not found")
-    }
+        if (!user) {
+            throw ApiError.notFound("User not found")
+        }
+        
+        const posts = await db
+        .select({url: postsTable.url})
+        .from(postsTable)
+        .where(eq(postsTable.userId, req.user.id))
 
-    return res.json(ApiResponse.ok("User profile fetched", user))
+    return res.json(ApiResponse.ok("User profile fetched", {
+        user,
+        posts
+    }))
 }
 
 export {

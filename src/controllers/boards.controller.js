@@ -1,4 +1,3 @@
-import { id } from "zod/v4/locales"
 import db from "../index.js"
 import { boardsTable } from "../models/boards.model.js"
 import { postsTable } from "../models/posts.model.js"
