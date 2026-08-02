@@ -18,8 +18,8 @@ const authenticate = (req, res, next) => {
     }
 }
 
-const isPostOwner = (req, res, next) => {
-    
-}
 
-export {authenticate}
+
+export {
+    authenticate
+}

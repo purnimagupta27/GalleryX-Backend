@@ -6,11 +6,13 @@ import commentRoutes from './routes/comments.routes.js'
 import userRoutes from './routes/user.routes.js'
 import boardRoutes from './routes/boards.routes.js'
 import followRoutes from './routes/follows.routes.js'
+import cookieParser  from 'cookie-parser'
 
 const app = express()
 
 app.use(express.json())
 // app.use(express.urlencoded())
+app.use(cookieParser())
 
 app.use('/api/auth', authRoutes)
 app.use('/api/posts', postRoutes)
