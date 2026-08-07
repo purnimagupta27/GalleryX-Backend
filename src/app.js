@@ -7,12 +7,19 @@ import userRoutes from './routes/user.routes.js'
 import boardRoutes from './routes/boards.routes.js'
 import followRoutes from './routes/follows.routes.js'
 import cookieParser  from 'cookie-parser'
+import cors from 'cors'
 
 const app = express()
 
 app.use(express.json())
-// app.use(express.urlencoded())
+app.use(express.urlencoded())
 app.use(cookieParser())
+app.use(cors({
+    origin: process.env.CORS_ORIGIN,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"]
+}))
 
 app.use('/api/auth', authRoutes)
 app.use('/api/posts', postRoutes)
