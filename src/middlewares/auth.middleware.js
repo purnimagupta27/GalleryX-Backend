@@ -2,13 +2,11 @@ import ApiError from "../utils/api-error.js"
 import { verifyToken } from "../utils/token.js"
 
 const authenticate = (req, res, next) => {
-    const authHeader = req.headers.authorization
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        throw ApiError.badRequest("Please provide a token first")
+    const token = req.cookies.auth_token
+    if(!token){
+        throw ApiError.unauthorized("Access denied. No token provided")
     }
-
-    const token = authHeader.split(" ")[1]
-    try {
+    try{
         const decoded = verifyToken(token)
         req.user = decoded
         next()

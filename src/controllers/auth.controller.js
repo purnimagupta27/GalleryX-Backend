@@ -7,6 +7,7 @@ import { usersTable } from '../models/users.model.js'
 import { eq, or } from 'drizzle-orm'
 import { generateToken, verifyToken } from '../utils/token.js'
 import { postsTable } from '../models/posts.model.js'
+import cookieParser from 'cookie-parser'
 
 const userSignup = async (req, res) => {
     const validatedData = await signupValidateSchema.safeParseAsync(req.body)
@@ -56,18 +57,18 @@ const userSignin = async (req, res) => {
         });
     }
 
-    const { identifier, password } = validatedData.data
-    if (!identifier || !password) {
+    const { email, password } = validatedData.data
+    if (!email || !password) {
         throw ApiError.badRequest("Please fill all the details")
     }
 
     const [existingUser] = await db
         .select({ id: usersTable.id, username: usersTable.username, email: usersTable.email, password: usersTable.password })
         .from(usersTable)
-        .where(or(eq(usersTable.username, identifier), eq(usersTable.email, identifier)))
+        .where(eq(usersTable.email, email))
 
     if (!existingUser) {
-        throw ApiError.notFound("User with this email or username does not exist")
+        throw ApiError.notFound("User with this email does not exist")
     }
 
     const isCorrectPassword = await bcrypt.compare(password, existingUser.password)
@@ -78,7 +79,13 @@ const userSignin = async (req, res) => {
 
     const token = generateToken({ id: existingUser.id })
 
-    res.json(ApiResponse.ok("User logged-in", token))
+    res.cookie('auth_token', token, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict'
+    })
+
+    res.json(ApiResponse.ok("User logged-in"))
 }
 
 const getMe = async (req, res) => {

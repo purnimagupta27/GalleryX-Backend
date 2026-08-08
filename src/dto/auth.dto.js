@@ -10,7 +10,7 @@ const signupValidateSchema = z.object({
 })
 
 const signinValidateSchema = z.object({
-    identifier: z.string().trim().min(4, "Email or username is required"),
+    email: z.string().trim().email("Invalid email address"),
     password: z.string().min(1, "Password is required")
 })
 
