@@ -4,10 +4,11 @@ import uploadOnCloudinary from "../utils/cloudinary.js"
 import db from "../index.js"
 import { postsTable } from '../models/posts.model.js'
 import ApiResponse from "../utils/api-response.js"
-import { eq, and, desc, count } from 'drizzle-orm'
+import { eq, and, desc, count, countDistinct } from 'drizzle-orm'
 import { usersTable } from "../models/users.model.js"
 import { validate as isUUID } from 'uuid'
 import { likesTable } from "../models/likes.model.js"
+import { commentsTable } from "../models/comments.model.js"
 
 
 const createPost = async (req, res) => {
@@ -96,7 +97,7 @@ const getMyPostById = async (req, res) => {
             username: usersTable.username
         },
 
-        likes:{
+        likes: {
             likesCount: count(likesTable.id)
         }
     })
@@ -182,7 +183,7 @@ const deleteMyPostById = async (req, res) => {
 }
 
 const getAllPosts = async (req, res) => {
-    const limit = 10
+    const limit = 20
     const page = Number(req.query.page) || 1
     const offset = (page - 1) * limit;
 
@@ -222,17 +223,29 @@ const getPostById = async (req, res) => {
             username: usersTable.username
         },
 
-        likes:{
-            likesCount: count(likesTable.id)
+        likes: {
+            likesCount: countDistinct(likesTable.id)
+        },
+
+        comments: {
+            commentsCount: countDistinct(commentsTable.id)
         }
     })
         .from(postsTable)
         .innerJoin(usersTable, eq(postsTable.userId, usersTable.id))
         .leftJoin(likesTable, eq(postsTable.id, likesTable.postId))
+        .leftJoin(commentsTable, eq(postsTable.id, commentsTable.postId))
         .where(and(
             eq(postsTable.id, id),
             eq(postsTable.isPrivate, false))
         )
+        .groupBy(
+            postsTable.id,
+            postsTable.url,
+            postsTable.caption,
+            usersTable.id,
+            usersTable.username
+        );
 
     if (!post) {
         throw ApiError.notFound("Post not found")
