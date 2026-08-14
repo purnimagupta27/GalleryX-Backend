@@ -5,7 +5,7 @@ import * as controller from '../controllers/likes.controller.js'
 const router = Router()
 
 router.post('/post/:postId', authenticate, controller.createLike)
-router.delete('/:likeId', authenticate, controller.removeLike)
+router.delete('/post/:postId', authenticate, controller.removeLike)
 
 
 export default router

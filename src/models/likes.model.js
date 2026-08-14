@@ -1,4 +1,4 @@
-import { integer, pgTable, varchar, uuid, timestamp } from "drizzle-orm/pg-core";
+import { index, pgTable, uniqueIndex, uuid, timestamp } from "drizzle-orm/pg-core";
 import { usersTable } from "./users.model.js";
 import { postsTable } from "./posts.model.js";
 
@@ -10,4 +10,7 @@ export const likesTable = pgTable("likes", {
     postId: uuid().notNull().references(() => postsTable.id, {
         onDelete: "cascade"
     }),
-})
+}, (table) => [
+    uniqueIndex('unique_user_post_like').on(table.userId, table.postId),
+    index("likes_post_id_idx").on(table.postId)
+])
