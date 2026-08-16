@@ -8,7 +8,7 @@ import { eq, and } from 'drizzle-orm'
 import ApiResponse from '../utils/api-response.js'
 
 const createComment = async (req, res) => {
-    const {message}  = req.body
+    const { message } = req.body
     const { postId } = req.params
 
     if (!isUUID(postId)) {
@@ -39,13 +39,21 @@ const createComment = async (req, res) => {
             postId
         }).returning()
 
-    res.json(ApiResponse.created("Comment created", comment))
+    const [user] = await db
+        .select({ username: usersTable.username })
+        .from(usersTable)
+        .where(eq(usersTable.id, req.user.id));
+
+    res.json(ApiResponse.created("Comment created", {
+        ...comment,
+        username: user?.username
+    }))
 }
 
-const deleteComment = async(req, res) => {
-    const { commentId } = req.params 
+const deleteComment = async (req, res) => {
+    const { commentId } = req.params
 
-    if(!isUUID(commentId)){
+    if (!isUUID(commentId)) {
         throw ApiError.badRequest("Invalid id")
     }
 
@@ -62,14 +70,14 @@ const deleteComment = async(req, res) => {
     }
 
     await db.delete(commentsTable)
-    .where(eq(commentsTable.id, commentId))
-    .returning()
+        .where(eq(commentsTable.id, commentId))
+        .returning()
 
     res.json(ApiResponse.ok("Comment deleted"))
 }
 
-const getComments = async(req, res) => {
-    const {postId} = req.params
+const getComments = async (req, res) => {
+    const { postId } = req.params
 
     if (!isUUID(postId)) {
         throw ApiError.badRequest("Invalid id")
@@ -88,27 +96,21 @@ const getComments = async(req, res) => {
     }
 
     const comments = await db.select({
-            message: commentsTable.message,
-            username: usersTable.username
-        }
-    )
-    .from(commentsTable)
-    .where(eq(commentsTable.postId, postId))
-    .innerJoin(usersTable,
-        eq(commentsTable.userId, usersTable.id)
-    )
-
-    if(comments.length === 0){
-        return res.status(200).json({
-            comments
-        })
-    }
+        id: commentsTable.id,
+        message: commentsTable.message,
+        username: usersTable.username
+    })
+        .from(commentsTable)
+        .where(eq(commentsTable.postId, postId))
+        .innerJoin(usersTable,
+            eq(commentsTable.userId, usersTable.id)
+        )
 
     res.json(ApiResponse.ok("Comments", comments))
 }
 
-export{
+export {
     createComment,
-    deleteComment, 
+    deleteComment,
     getComments
 }
