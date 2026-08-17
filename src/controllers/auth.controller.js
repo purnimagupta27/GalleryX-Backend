@@ -4,10 +4,12 @@ import ApiResponse from '../utils/api-response.js'
 import { signupValidateSchema, signinValidateSchema } from '../dto/auth.dto.js'
 import db from "../index.js"
 import { usersTable } from '../models/users.model.js'
-import { eq, or } from 'drizzle-orm'
+import { eq, or, sql } from 'drizzle-orm'
 import { generateToken, verifyToken } from '../utils/token.js'
 import { postsTable } from '../models/posts.model.js'
 import cookieParser from 'cookie-parser'
+import { followsTable } from '../models/follows.model.js'
+import { count } from 'node:console'
 
 const userSignup = async (req, res) => {
     const validatedData = await signupValidateSchema.safeParseAsync(req.body)
@@ -99,18 +101,30 @@ const getMe = async (req, res) => {
         .from(usersTable)
         .where(eq(usersTable.id, req.user.id))
 
-        if (!user) {
-            throw ApiError.notFound("User not found")
-        }
-        
-        const posts = await db
-        .select({url: postsTable.url})
+    if (!user) {
+        throw ApiError.notFound("User not found")
+    }
+
+    const posts = await db
+        .select({ url: postsTable.url })
         .from(postsTable)
         .where(eq(postsTable.userId, req.user.id))
 
+    const [follows] = await db
+    .select({
+        followers: sql`count(*) filter (
+            where ${followsTable.followingId} = ${req.user.id}
+        )`,
+        following: sql`count(*) filter (
+            where ${followsTable.followerId} = ${req.user.id}
+        )`
+    })
+    .from(followsTable)
+
     return res.json(ApiResponse.ok("User profile fetched", {
         user,
-        posts
+        posts,
+        follows
     }))
 }
 
