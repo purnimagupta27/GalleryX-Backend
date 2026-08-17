@@ -106,7 +106,7 @@ const getMe = async (req, res) => {
     }
 
     const posts = await db
-        .select({ url: postsTable.url })
+        .select({ id: postsTable.id, url: postsTable.url, caption: postsTable.caption })
         .from(postsTable)
         .where(eq(postsTable.userId, req.user.id))
 
