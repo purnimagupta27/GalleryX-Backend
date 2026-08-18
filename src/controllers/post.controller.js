@@ -98,16 +98,29 @@ const getMyPostById = async (req, res) => {
         },
 
         likes: {
-            likesCount: count(likesTable.id)
+            likesCount: countDistinct(likesTable.id)
+        },
+
+        comments: {
+            commentsCount: countDistinct(commentsTable.id)
         }
     })
         .from(postsTable)
         .innerJoin(usersTable, eq(postsTable.userId, usersTable.id))
         .leftJoin(likesTable, eq(postsTable.id, likesTable.postId))
+        .leftJoin(commentsTable, eq(postsTable.id, commentsTable.postId))
         .where(and(                                 //when we want to add multiple checks
             eq(postsTable.userId, req.user.id),
             eq(postsTable.id, id)
         ))
+        .groupBy(
+            postsTable.id,
+            postsTable.url,
+            postsTable.caption,
+            postsTable.isPrivate,
+            usersTable.id,
+            usersTable.username
+        );
 
     if (!post) {
         throw ApiError.notFound(`Post with this id ${id} does not exist`)
