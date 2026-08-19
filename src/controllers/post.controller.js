@@ -4,7 +4,7 @@ import uploadOnCloudinary from "../utils/cloudinary.js"
 import db from "../index.js"
 import { postsTable } from '../models/posts.model.js'
 import ApiResponse from "../utils/api-response.js"
-import { eq, and, desc, count, countDistinct } from 'drizzle-orm'
+import { eq, and, desc, count, countDistinct, or } from 'drizzle-orm'
 import { usersTable } from "../models/users.model.js"
 import { validate as isUUID } from 'uuid'
 import { likesTable } from "../models/likes.model.js"
@@ -44,6 +44,7 @@ const createPost = async (req, res) => {
     res.json(ApiResponse.created("Post created successfully", userPost))
 }
 
+//not usable
 const getMyPosts = async (req, res) => {
     const limit = Number(req.query.limit) || 5
     const page = Number(req.query.page) || 1
@@ -79,6 +80,7 @@ const getMyPosts = async (req, res) => {
     }))
 }
 
+//not usable
 const getMyPostById = async (req, res) => {
     const { id } = req.params
 
@@ -129,6 +131,7 @@ const getMyPostById = async (req, res) => {
     res.json(ApiResponse.ok("Post fetched", post))
 }
 
+
 const editMyPostById = async (req, res) => {
     const { id } = req.params
     const validatedData = createPostValidateSchema.safeParse(req.body)
@@ -175,6 +178,7 @@ const editMyPostById = async (req, res) => {
     res.json(ApiResponse.ok("Post updated", updatedPost))
 }
 
+
 const deleteMyPostById = async (req, res) => {
     const { id } = req.params
 
@@ -194,6 +198,7 @@ const deleteMyPostById = async (req, res) => {
 
     res.json(ApiResponse.ok("Post Deleted"))
 }
+
 
 const getAllPosts = async (req, res) => {
     const limit = Number(req.query.limit) || 5
@@ -248,9 +253,14 @@ const getPostById = async (req, res) => {
         .innerJoin(usersTable, eq(postsTable.userId, usersTable.id))
         .leftJoin(likesTable, eq(postsTable.id, likesTable.postId))
         .leftJoin(commentsTable, eq(postsTable.id, commentsTable.postId))
-        .where(and(
-            eq(postsTable.id, id),
-            eq(postsTable.isPrivate, false))
+        .where(
+            and(
+                eq(postsTable.id, id),
+                or(
+                    eq(postsTable.isPrivate, false),
+                    eq(postsTable.userId, req.user.id)
+                )
+            )
         )
         .groupBy(
             postsTable.id,
@@ -268,6 +278,7 @@ const getPostById = async (req, res) => {
 
 }
 
+//not usable
 const getUsersPost = async (req, res) => {
     const { userId } = req.params
     const limit = Number(req.query.limit) || 5
