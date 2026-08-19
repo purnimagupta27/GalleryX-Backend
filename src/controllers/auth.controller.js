@@ -128,8 +128,18 @@ const getMe = async (req, res) => {
     }))
 }
 
+const userLogout = async(req, res) => {
+    res.clearCookie("auth_token", {
+    httpOnly: true,
+    secure: false,
+    sameSite: "strict",
+  });
+  return res.json(ApiResponse.noContent("Logout successful"))
+}
+
 export {
     userSignup,
     userSignin,
-    getMe
+    getMe,
+    userLogout
 }
