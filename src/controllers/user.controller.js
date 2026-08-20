@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm'
+import { eq, sql, and, desc } from 'drizzle-orm'
 import { validate as isUUID } from 'uuid'
 import ApiError from '../utils/api-error.js'
 import db from '../index.js'

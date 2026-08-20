@@ -4,7 +4,7 @@ import ApiResponse from '../utils/api-response.js'
 import { signupValidateSchema, signinValidateSchema } from '../dto/auth.dto.js'
 import db from "../index.js"
 import { usersTable } from '../models/users.model.js'
-import { eq, or, sql } from 'drizzle-orm'
+import { eq, or, sql, desc } from 'drizzle-orm'
 import { generateToken, verifyToken } from '../utils/token.js'
 import { postsTable } from '../models/posts.model.js'
 import cookieParser from 'cookie-parser'
