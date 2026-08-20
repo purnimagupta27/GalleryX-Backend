@@ -109,17 +109,18 @@ const getMe = async (req, res) => {
         .select({ id: postsTable.id, url: postsTable.url, caption: postsTable.caption, isPrivate: postsTable.isPrivate })
         .from(postsTable)
         .where(eq(postsTable.userId, req.user.id))
+        .orderBy(desc(postsTable.createdAt))
 
     const [follows] = await db
-    .select({
-        followers: sql`count(*) filter (
+        .select({
+            followers: sql`count(*) filter (
             where ${followsTable.followingId} = ${req.user.id}
         )`,
-        following: sql`count(*) filter (
+            following: sql`count(*) filter (
             where ${followsTable.followerId} = ${req.user.id}
         )`
-    })
-    .from(followsTable)
+        })
+        .from(followsTable)
 
     return res.json(ApiResponse.ok("User profile fetched", {
         user,
@@ -128,13 +129,13 @@ const getMe = async (req, res) => {
     }))
 }
 
-const userLogout = async(req, res) => {
+const userLogout = async (req, res) => {
     res.clearCookie("auth_token", {
-    httpOnly: true,
-    secure: false,
-    sameSite: "strict",
-  });
-  return res.json(ApiResponse.noContent("Logout successful"))
+        httpOnly: true,
+        secure: false,
+        sameSite: "strict",
+    });
+    return res.json(ApiResponse.noContent("Logout successful"))
 }
 
 export {
