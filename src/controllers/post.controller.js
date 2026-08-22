@@ -1,5 +1,5 @@
 import ApiError from "../utils/api-error.js"
-import { createPostValidateSchema } from "../dto/post.dto.js"
+import { createPostValidateSchema, updatePostValidateSchema } from "../dto/post.dto.js"
 import uploadOnCloudinary from "../utils/cloudinary.js"
 import db from "../index.js"
 import { postsTable } from '../models/posts.model.js'
@@ -134,7 +134,7 @@ const getMyPostById = async (req, res) => {
 
 const editMyPostById = async (req, res) => {
     const { id } = req.params
-    const validatedData = createPostValidateSchema.safeParse(req.body)
+    const validatedData = updatePostValidateSchema.safeParse(req.body)
 
     if (!isUUID(id)) {
         throw ApiError.badRequest("Invalid id")
@@ -148,10 +148,6 @@ const editMyPostById = async (req, res) => {
     }
 
     const { caption, isPrivate } = validatedData.data
-
-    if (caption === undefined && isPrivate === undefined) {
-        throw ApiError.badRequest("Please provide at least one field to update");
-    }
 
     const updatedData = {}
 
